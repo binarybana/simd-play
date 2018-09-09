@@ -25,12 +25,11 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
         for col in 0..b.width {
             for k in 0..a.width {
                 // for block_row in 0..8 {
-                // unsafe {
-                // *result.data.get_unchecked_mut(row*result.width + col) +=
-                //     *a.data.get_unchecked(row*a.width + k) *
-                //     *b.data.get_unchecked(k*b.width + col);
-                // }
-                result.data[row*result.width + col] += a.data[row*a.width + k] * b.data[k*b.width + col];
+                unsafe {
+                *result.data.get_unchecked_mut(row*result.width + col) +=
+                    *a.data.get_unchecked(row*a.width + k) *
+                    *b.data.get_unchecked(k*b.width + col);
+                }
             }
         }
     }
