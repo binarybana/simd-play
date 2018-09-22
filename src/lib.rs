@@ -22,7 +22,6 @@ pub fn get_rand_matrix(m: usize, n: usize) -> Mat {
 pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
     let n = a.height;
-    // let res = result.data.as_mut_ptr();
     let block = 8;
     for kk in (0..n).step_by(block) {
         for jj in (0..n).step_by(block) {
