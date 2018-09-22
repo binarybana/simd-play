@@ -23,13 +23,14 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
     let n = a.height;
     // let res = result.data.as_mut_ptr();
-    for kk in (0..n).step_by(8) {
-        for jj in (0..n).step_by(8) {
+    let block = 8;
+    for kk in (0..n).step_by(block) {
+        for jj in (0..n).step_by(block) {
             for i in 0..n {
-                for j in jj..jj+8 {
+                for j in jj..jj+block {
                     unsafe {
                         let mut sum = *result.data.get_unchecked(i*n + j);
-                        for k in kk..kk+8 {
+                        for k in kk..kk+block {
                             sum += *a.data.get_unchecked(i*n + k) *
                                    *b.data.get_unchecked(k*n + j);
                         }
