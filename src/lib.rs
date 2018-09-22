@@ -18,17 +18,23 @@ pub fn get_rand_matrix(m: usize, n: usize) -> Mat {
     mat
 }
 
+// Order somewhat inspired from http://www.cs.utexas.edu/users/flame/pubs/blis1_toms_rev3.pdf
 pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
+    let n = a.height;
     // let res = result.data.as_mut_ptr();
-    for row in 0..a.height {
-        for col in 0..b.width {
-            for k in 0..a.width {
-                // for block_row in 0..8 {
-                unsafe {
-                *result.data.get_unchecked_mut(row*result.width + col) +=
-                    *a.data.get_unchecked(row*a.width + k) *
-                    *b.data.get_unchecked(k*b.width + col);
+    for kk in (0..n).step_by(8) {
+        for jj in (0..n).step_by(8) {
+            for i in 0..n {
+                for j in jj..jj+8 {
+                    unsafe {
+                        let mut sum = *result.data.get_unchecked(i*n + j);
+                        for k in kk..kk+8 {
+                            sum += *a.data.get_unchecked(i*n + k) *
+                                   *b.data.get_unchecked(k*n + j);
+                        }
+                        *result.data.get_unchecked_mut(i*n + j) = sum;
+                    }
                 }
             }
         }
