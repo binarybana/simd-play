@@ -1,5 +1,10 @@
-##
-Run bench with `RUSTFLAGS="-C target-cpu=native" cargo bench -- "matmul 512"`
+## Playing with matmul and SIMD
+
+This was a fun hacking attempt try and write a high performance matmul kernel by myself in Rust.
+
+I ended up getting within an order of magnitude (8x slower) of Intel MKL.
+
+Run bench with `RUSTFLAGS="-C target-cpu=native" cargo bench 
 
 ```
 using 64 bit double precision fp:
@@ -32,8 +37,7 @@ matmul_ndarray 64       time:   [9.0853 us 9.1128 us 9.1453 us]
 
 Where theoretical DP peak is around 99 GFlop/s (2 cores x 3.1GHz turbo * 16 DP flops/cycle)
 And theoretical SP peak is around 198 GFlop/s (2 cores x 3.1GHz turbo * 32 SP flops/cycle)
-(if I change to 32bit and use bigger matrices, I can achieve about 130 GFlop/s (but this is off battery, so I'm not sure turbo is on, which would be peak of 160 GF/s).
-
+(if I change to 32bit, I can achieve about 130 GFlop/s which is still off theoretical peak)
 
 Now switching to SP:
 
@@ -41,5 +45,9 @@ Now switching to SP:
 matmul 64               time:   [33.769 us 33.837 us 33.917 us]                       
                         change: [-41.702% -41.242% -40.586%] (p = 0.00 < 0.05)
 
+MKL:
+matmul_ndarray 64       time:   [4.2311 us 4.2421 us 4.2547 us]
 ```
+
+I also tried manual f32x8 packing and manual AVX{2} intrinsics attempts, but both were significantly slower, and I wasn't able to tell why when looking at the assembly.
 
