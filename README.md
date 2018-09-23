@@ -1,3 +1,4 @@
+##
 Run bench with `RUSTFLAGS="-C target-cpu=native" cargo bench -- "matmul 512"`
 
 ```
@@ -17,6 +18,9 @@ matmul 64               time:   [182.35 us 183.13 us 184.19 us]
 Further blocking (different) and a,b packing (a8c47e5):
 matmul 64               time:   [132.59 us 132.92 us 133.30 us]
 
+C packing too (and some fixes, but still not quite correct for multi-tiles) (98c31e):
+matmul 64               time:   [58.021 us 58.134 us 58.266 us]
+                        change: [-56.869% -56.272% -55.724%] (p = 0.00 < 0.05)
 
 By Comparison, here is ndarray's implementation:
 matmul_ndarray 64       time:   [29.604 us 30.222 us 31.029 us]

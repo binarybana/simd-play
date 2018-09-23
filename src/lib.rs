@@ -54,7 +54,6 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
                 for u in 0..block {
                     for v in 0..block {
                         unsafe {
-                            // let mut sum = *result.data.get_unchecked((mc*block+u)*n + nc*block+v);
                             let mut sum = 0.0;
                             let a = u*block;
                             let b = v*block;
@@ -66,7 +65,6 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
                             sum += *a_pack.get_unchecked(a + 5) * *b_pack.get_unchecked(b + 5);
                             sum += *a_pack.get_unchecked(a + 6) * *b_pack.get_unchecked(b + 6);
                             sum += *a_pack.get_unchecked(a + 7) * *b_pack.get_unchecked(b + 7);
-                            // *result.data.get_unchecked_mut((mc*block+u)*n + nc*block+v) = sum;
                             c_pack[u][v] = sum;
                         }
                     }
