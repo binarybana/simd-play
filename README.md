@@ -33,5 +33,13 @@ matmul_ndarray 64       time:   [9.0853 us 9.1128 us 9.1453 us]
 Where theoretical DP peak is around 99 GFlop/s (2 cores x 3.1GHz turbo * 16 DP flops/cycle)
 And theoretical SP peak is around 198 GFlop/s (2 cores x 3.1GHz turbo * 32 SP flops/cycle)
 (if I change to 32bit and use bigger matrices, I can achieve about 130 GFlop/s (but this is off battery, so I'm not sure turbo is on, which would be peak of 160 GF/s).
+
+
+Now switching to SP:
+
+(started at "C packing too" from above):
+matmul 64               time:   [33.769 us 33.837 us 33.917 us]                       
+                        change: [-41.702% -41.242% -40.586%] (p = 0.00 < 0.05)
+
 ```
 
