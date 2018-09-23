@@ -18,15 +18,16 @@ pub fn get_rand_matrix(m: usize, n: usize) -> Mat {
     mat
 }
 
-// struct f64x4(f64,f64,f64,f64);
+#[derive(Default,Clone,Copy)]
+struct f32x8(f32,f32,f32,f32,f32,f32,f32,f32);
 
 // Order somewhat inspired from http://www.cs.utexas.edu/users/flame/pubs/blis1_toms_rev3.pdf
 pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
     let n = a.height;
     let block = 8;
-    let mut a_pack = [[0.0; 8]; 8];
-    let mut b_pack = [[0.0; 8]; 8];
+    let mut a_pack = [f32x8::default(); 8];
+    let mut b_pack = [f32x8::default(); 8];
     let mut c_pack = [[0.0; 8]; 8];
 
     // mkn ordering
@@ -40,9 +41,14 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
             unsafe {
                 // Pack b matrix chunk and transpose
                 for u in 0..block {
-                    for v in 0..block {
-                        b_pack[u][v] = *b.data.get_unchecked(nc*block+u + n*(kc*block+v));
-                    }
+                    b_pack[u].0 = *b.data.get_unchecked(nc*block+u + n*(kc*block+0));
+                    b_pack[u].1 = *b.data.get_unchecked(nc*block+u + n*(kc*block+1));
+                    b_pack[u].2 = *b.data.get_unchecked(nc*block+u + n*(kc*block+2));
+                    b_pack[u].3 = *b.data.get_unchecked(nc*block+u + n*(kc*block+3));
+                    b_pack[u].4 = *b.data.get_unchecked(nc*block+u + n*(kc*block+4));
+                    b_pack[u].5 = *b.data.get_unchecked(nc*block+u + n*(kc*block+5));
+                    b_pack[u].6 = *b.data.get_unchecked(nc*block+u + n*(kc*block+6));
+                    b_pack[u].7 = *b.data.get_unchecked(nc*block+u + n*(kc*block+7));
                 }
             }
             // loop 3
@@ -50,23 +56,26 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
                 unsafe {
                     // Pack the a matrix chunk
                     for u in 0..block {
-                        for v in 0..block {
-                            a_pack[u][v] = *a.data.get_unchecked(kc*block+v + n*(mc*block+u));
-                        }
+                        a_pack[u].0 = *a.data.get_unchecked(kc*block+0 + n*(mc*block+u));
+                        a_pack[u].1 = *a.data.get_unchecked(kc*block+1 + n*(mc*block+u));
+                        a_pack[u].2 = *a.data.get_unchecked(kc*block+2 + n*(mc*block+u));
+                        a_pack[u].3 = *a.data.get_unchecked(kc*block+3 + n*(mc*block+u));
+                        a_pack[u].4 = *a.data.get_unchecked(kc*block+4 + n*(mc*block+u));
+                        a_pack[u].5 = *a.data.get_unchecked(kc*block+5 + n*(mc*block+u));
+                        a_pack[u].6 = *a.data.get_unchecked(kc*block+6 + n*(mc*block+u));
+                        a_pack[u].7 = *a.data.get_unchecked(kc*block+7 + n*(mc*block+u));
                     }
                 }
                 for u in 0..block {
                     for v in 0..block {
-                        let mut sum = 0.0;
-                        sum += a_pack[u][0] * b_pack[v][0];
-                        sum += a_pack[u][1] * b_pack[v][1];
-                        sum += a_pack[u][2] * b_pack[v][2];
-                        sum += a_pack[u][3] * b_pack[v][3];
-                        sum += a_pack[u][4] * b_pack[v][4];
-                        sum += a_pack[u][5] * b_pack[v][5];
-                        sum += a_pack[u][6] * b_pack[v][6];
-                        sum += a_pack[u][7] * b_pack[v][7];
-                        c_pack[u][v] = sum;
+                        c_pack[u][v] =  a_pack[u].0 * b_pack[v].0 +
+                                        a_pack[u].1 * b_pack[v].1 +
+                                        a_pack[u].2 * b_pack[v].2 +
+                                        a_pack[u].3 * b_pack[v].3 +
+                                        a_pack[u].4 * b_pack[v].4 +
+                                        a_pack[u].5 * b_pack[v].5 +
+                                        a_pack[u].6 * b_pack[v].6 +
+                                        a_pack[u].7 * b_pack[v].7;
                     }
                 }
                 // copy back to C
