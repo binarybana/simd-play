@@ -23,17 +23,43 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
     let n = a.height;
     let block = 8;
-    for kk in (0..n).step_by(block) {
-        for jj in (0..n).step_by(block) {
-            for i in 0..n {
-                for j in jj..jj+block {
-                    unsafe {
-                        let mut sum = *result.data.get_unchecked(i*n + j);
-                        for k in kk..kk+block {
-                            sum += *a.data.get_unchecked(i*n + k) *
-                                   *b.data.get_unchecked(k*n + j);
+    let mut a_pack = vec![0.0; block*block];
+    let mut b_pack = vec![0.0; block*block];
+
+    // mkn ordering
+
+    // loop 5: 
+    for nc in 0..n/block {
+        // loop 4:
+        for kc in 0..n/block {
+            unsafe {
+                // Pack b matrix chunk and transpose
+                for u in 0..block {
+                    for v in 0..block {
+                        *b_pack.get_unchecked_mut(block*u + v) = *b.data.get_unchecked(nc*block+v + n*(kc*block+u));
+                    }
+                }
+            }
+            // loop 3
+            for mc in 0..n/block {
+                unsafe {
+                    // Pack the a matrix chunk
+                    for u in 0..block {
+                        for v in 0..block {
+                            *a_pack.get_unchecked_mut(block*u + v) = *a.data.get_unchecked(kc*block*u + n*(mc*block*v));
                         }
-                        *result.data.get_unchecked_mut(i*n + j) = sum;
+                    }
+                }
+                for u in 0..block {
+                    for v in 0..block {
+                        unsafe {
+                            let mut sum = *result.data.get_unchecked((mc*block+u)*n + nc*block+v);
+                            for kk in 0..block {
+                                sum += *a_pack.get_unchecked(u*block + kk) *
+                                       *b_pack.get_unchecked(v*block + kk);
+                            }
+                            *result.data.get_unchecked_mut((mc*block+u)*n + nc*block+v) = sum;
+                        }
                     }
                 }
             }

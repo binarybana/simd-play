@@ -14,6 +14,9 @@ Block by 8 (bda49f1)
 matmul 64               time:   [182.35 us 183.13 us 184.19 us]
                         change: [-26.114% -25.159% -24.405%] (p = 0.00 < 0.05)
 
+Further blocking (different) and a,b packing:
+matmul 64               time:   [132.59 us 132.92 us 133.30 us]
+
 
 By Comparison, here is ndarray's implementation:
 matmul_ndarray 64       time:   [29.604 us 30.222 us 31.029 us]
