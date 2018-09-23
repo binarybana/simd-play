@@ -2,7 +2,7 @@
 
 This was a fun hacking attempt try and write a high performance matmul kernel by myself in Rust.
 
-I ended up getting within an order of magnitude (8x slower) of Intel MKL.
+I ended up getting within an order of magnitude (8x slower) of Intel MKL, though my implementation is only single threaded so I'm within perhaps 4x. Though my implementation is only marginally accurate (tests were passing for 8x8x8, but not 8x16x8) and only supports multiple sizes of 8. Also, coding style etc is not great, so please don't judge this as my ability to write good code.
 
 Run bench with `RUSTFLAGS="-C target-cpu=native" cargo bench 
 
