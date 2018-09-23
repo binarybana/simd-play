@@ -18,20 +18,18 @@ pub fn get_rand_matrix(m: usize, n: usize) -> Mat {
     mat
 }
 
-// struct f64x4(f64,f64,f64,f64);
-
 // Order somewhat inspired from http://www.cs.utexas.edu/users/flame/pubs/blis1_toms_rev3.pdf
 pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let mut result = Mat{data: vec![0.0; a.height * b.width], height: a.height, width: b.width};
     let n = a.height;
     let block = 8;
-    let mut a_pack = [[0.0; 8]; 8];
-    let mut b_pack = [[0.0; 8]; 8];
+    let mut a_pack = unsafe {[_mm256_setzero_ps(); 8]};
+    let mut b_pack = unsafe {[_mm256_setzero_ps(); 8]};
     let mut c_pack = [[0.0; 8]; 8];
+    let mut tmp = [0.0; 8];
 
     // mkn ordering
-    // use std::arch::x86_64::_mm256_add_epi64;
-
+    use std::arch::x86_64::*;
 
     // loop 5: 
     for nc in 0..n/block {
@@ -40,33 +38,31 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
             unsafe {
                 // Pack b matrix chunk and transpose
                 for u in 0..block {
-                    for v in 0..block {
-                        b_pack[u][v] = *b.data.get_unchecked(nc*block+u + n*(kc*block+v));
-                    }
+                    b_pack[u] = _mm256_set_ps(*b.data.get_unchecked(nc*block+u + n*(kc*block+0)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+1)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+2)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+3)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+4)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+5)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+6)),
+                                              *b.data.get_unchecked(nc*block+u + n*(kc*block+7)));
                 }
             }
             // loop 3
             for mc in 0..n/block {
-                unsafe {
-                    // Pack the a matrix chunk
-                    for u in 0..block {
-                        for v in 0..block {
-                            a_pack[u][v] = *a.data.get_unchecked(kc*block+v + n*(mc*block+u));
-                        }
+                // Pack the a matrix chunk
+                for u in 0..block {
+                    unsafe {
+                        a_pack[u] = _mm256_load_ps(a.data.as_ptr().offset((kc*block + n*(mc*block+u)) as isize));
                     }
                 }
                 for u in 0..block {
                     for v in 0..block {
-                        let mut sum = 0.0;
-                        sum += a_pack[u][0] * b_pack[v][0];
-                        sum += a_pack[u][1] * b_pack[v][1];
-                        sum += a_pack[u][2] * b_pack[v][2];
-                        sum += a_pack[u][3] * b_pack[v][3];
-                        sum += a_pack[u][4] * b_pack[v][4];
-                        sum += a_pack[u][5] * b_pack[v][5];
-                        sum += a_pack[u][6] * b_pack[v][6];
-                        sum += a_pack[u][7] * b_pack[v][7];
-                        c_pack[u][v] = sum;
+                        unsafe {
+                            let products =  _mm256_mul_ps(a_pack[u], b_pack[v]);
+                            _mm256_store_ps(tmp.as_ptr(), products);
+                            c_pack[u][v] = tmp.iter().fold(0.0, |a, b| a+b);
+                        }
                     }
                 }
                 // copy back to C
