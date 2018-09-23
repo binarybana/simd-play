@@ -25,6 +25,7 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
     let block = 8;
     let mut a_pack = vec![0.0; block*block];
     let mut b_pack = vec![0.0; block*block];
+    let mut c_pack = [[0.0; 8]; 8];
 
     // mkn ordering
 
@@ -36,7 +37,7 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
                 // Pack b matrix chunk and transpose
                 for u in 0..block {
                     for v in 0..block {
-                        *b_pack.get_unchecked_mut(block*u + v) = *b.data.get_unchecked(nc*block+v + n*(kc*block+u));
+                        *b_pack.get_unchecked_mut(block*u + v) = *b.data.get_unchecked(nc*block+u + n*(kc*block+v));
                     }
                 }
             }
@@ -46,19 +47,35 @@ pub fn matmul(a: &Mat, b: &Mat) -> Mat {
                     // Pack the a matrix chunk
                     for u in 0..block {
                         for v in 0..block {
-                            *a_pack.get_unchecked_mut(block*u + v) = *a.data.get_unchecked(kc*block*u + n*(mc*block*v));
+                            *a_pack.get_unchecked_mut(block*u + v) = *a.data.get_unchecked(kc*block+v + n*(mc*block+u));
                         }
                     }
                 }
                 for u in 0..block {
                     for v in 0..block {
                         unsafe {
-                            let mut sum = *result.data.get_unchecked((mc*block+u)*n + nc*block+v);
-                            for kk in 0..block {
-                                sum += *a_pack.get_unchecked(u*block + kk) *
-                                       *b_pack.get_unchecked(v*block + kk);
-                            }
-                            *result.data.get_unchecked_mut((mc*block+u)*n + nc*block+v) = sum;
+                            // let mut sum = *result.data.get_unchecked((mc*block+u)*n + nc*block+v);
+                            let mut sum = 0.0;
+                            let a = u*block;
+                            let b = v*block;
+                            sum += *a_pack.get_unchecked(a) * *b_pack.get_unchecked(b);
+                            sum += *a_pack.get_unchecked(a + 1) * *b_pack.get_unchecked(b + 1);
+                            sum += *a_pack.get_unchecked(a + 2) * *b_pack.get_unchecked(b + 2);
+                            sum += *a_pack.get_unchecked(a + 3) * *b_pack.get_unchecked(b + 3);
+                            sum += *a_pack.get_unchecked(a + 4) * *b_pack.get_unchecked(b + 4);
+                            sum += *a_pack.get_unchecked(a + 5) * *b_pack.get_unchecked(b + 5);
+                            sum += *a_pack.get_unchecked(a + 6) * *b_pack.get_unchecked(b + 6);
+                            sum += *a_pack.get_unchecked(a + 7) * *b_pack.get_unchecked(b + 7);
+                            // *result.data.get_unchecked_mut((mc*block+u)*n + nc*block+v) = sum;
+                            c_pack[u][v] = sum;
+                        }
+                    }
+                }
+                // copy back to C
+                for u in 0..block {
+                    for v in 0..block {
+                        unsafe {
+                            *result.data.get_unchecked_mut((mc*block+u)*n + nc*block+v) += c_pack[u][v];
                         }
                     }
                 }
